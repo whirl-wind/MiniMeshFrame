@@ -13,6 +13,7 @@ ImageWidget::ImageWidget(ImageWindow *mainwindow)
 	ptr_imagewindow_ = mainwindow;
 	ptr_mesh_ = ptr_imagewindow_->ptr_mainwindow_->ptr_renderingwidget_->ptr_mesh_;
 	if(Open(ptr_imagewindow_->ptr_mainwindow_->ptr_renderingwidget_->texture_filename_)) image_status_ = true;
+
 	Pt_Uniform();
 }
 
@@ -89,8 +90,7 @@ void ImageWidget::Open()
 		cvtColor(image_mat_, image_mat_, cv::COLOR_BGR2RGB);
 		image_mat_backup_ = image_mat_.clone();
 		image_status_ = true;
-		pt = new Pt_uniform(ptr_mesh_, image_mat_.cols, image_mat_.rows);
-		pt->parameterization();
+		Pt_Uniform();
 	}
 	else
 		return;
@@ -102,9 +102,8 @@ void ImageWidget::Open(Mat img)
 	image_mat_ = img;
 	image_mat_backup_ = image_mat_.clone();
 	image_status_ = true;
-	pt = new Pt_uniform(ptr_mesh_, image_mat_.cols, image_mat_.rows);
-	pt->parameterization();
-
+	
+	Pt_Uniform();
 	update();
 }
 
@@ -120,8 +119,7 @@ bool ImageWidget::Open(QString img_filename_)
 		cvtColor(image_mat_, image_mat_, cv::COLOR_BGR2RGB);
 		image_mat_backup_ = image_mat_.clone();
 		image_status_ = true;
-		pt = new Pt_uniform(ptr_mesh_, image_mat_.cols, image_mat_.rows);
-		pt->parameterization();
+		Pt_Uniform();
 	}
 	else
 		return false;
@@ -190,8 +188,8 @@ void ImageWidget::Restore()
 
 void ImageWidget::Pt_Uniform()
 {
-	pt = new Pt_uniform(ptr_mesh_, 250, 250);
-	if(image_status_) pt = new Pt_uniform(ptr_mesh_, image_mat_.cols, image_mat_.rows);
+	pt = new Pt_uniform(ptr_mesh_, min(min(image_mat_.cols, this->width()), min(image_mat_.rows, this->height())), min(min(image_mat_.cols, this->width()), min(image_mat_.rows, this->height())));
+	if(image_status_) pt = new Pt_uniform(ptr_mesh_, min(min(image_mat_.cols, this->width()), min(image_mat_.rows, this->height())), min(min(image_mat_.cols, this->width()), min(image_mat_.rows, this->height())));
 	if (!pt->is_good_) return;
 	pt->parameterization();
 	if (image_status_) pt->SetTexcoord();
@@ -201,8 +199,8 @@ void ImageWidget::Pt_Uniform()
 
 void ImageWidget::Pt_Weightedleastsquares()
 {
-	pt = new Pt_weightedleastsquares(ptr_mesh_, 250, 250);
-	if (image_status_) pt = new Pt_weightedleastsquares(ptr_mesh_, image_mat_.cols, image_mat_.rows);
+	pt = new Pt_weightedleastsquares(ptr_mesh_, min(min(image_mat_.cols, this->width()), min(image_mat_.rows, this->height())), min(min(image_mat_.cols, this->width()), min(image_mat_.rows, this->height())));
+	if (image_status_) pt = new Pt_weightedleastsquares(ptr_mesh_, min(min(image_mat_.cols, this->width()), min(image_mat_.rows, this->height())), min(min(image_mat_.cols, this->width()), min(image_mat_.rows, this->height())));
 	pt->parameterization();
 	if (image_status_) pt->SetTexcoord();
 	update();
@@ -211,8 +209,8 @@ void ImageWidget::Pt_Weightedleastsquares()
 
 void ImageWidget::Pt_Shapepreserving()
 {
-	pt = new Pt_shapepreserving(ptr_mesh_, 250, 250);
-	if (image_status_) pt = new Pt_shapepreserving(ptr_mesh_, image_mat_.cols, image_mat_.rows);
+	pt = new Pt_shapepreserving(ptr_mesh_, min(min(image_mat_.cols, this->width()), min(image_mat_.rows, this->height())), min(min(image_mat_.cols, this->width()), min(image_mat_.rows, this->height())));
+	if (image_status_) pt = new Pt_shapepreserving(ptr_mesh_, min(min(image_mat_.cols, this->width()), min(image_mat_.rows, this->height())), min(min(image_mat_.cols, this->width()), min(image_mat_.rows, this->height())));
 	pt->parameterization();
 	if (image_status_) pt->SetTexcoord();
 	update();
@@ -221,8 +219,10 @@ void ImageWidget::Pt_Shapepreserving()
 
 void ImageWidget::Pt_Asap()
 {
-	pt = new Pt_ASAP(ptr_mesh_, 250, 250, this->ptr_imagewindow_->ptr_mainwindow_->ptr_renderingwidget_->DDG);
-	if (image_status_) pt = new Pt_ASAP(ptr_mesh_, image_mat_.cols, image_mat_.rows, this->ptr_imagewindow_->ptr_mainwindow_->ptr_renderingwidget_->DDG);
+	pt = new Pt_ASAP(ptr_mesh_, min(min(image_mat_.cols, this->width()), min(image_mat_.rows, this->height())), min(min(image_mat_.cols, this->width()), min(image_mat_.rows, this->height())), this->ptr_imagewindow_->ptr_mainwindow_->ptr_renderingwidget_->DDG);
+	//std::cout << min(image_mat_.cols, this->height()) << std::endl;
+	
+	if (image_status_) pt = new Pt_ASAP(ptr_mesh_, min(min(image_mat_.cols, this->width()), min(image_mat_.rows, this->height())), min(min(image_mat_.cols, this->width()), min(image_mat_.rows, this->height())), this->ptr_imagewindow_->ptr_mainwindow_->ptr_renderingwidget_->DDG);
 	pt->parameterization();
 	if (image_status_) pt->SetTexcoord();
 	update();
@@ -231,8 +231,8 @@ void ImageWidget::Pt_Asap()
 
 void ImageWidget::Pt_Arap()
 {
-	pt = new Pt_ARAP(ptr_mesh_, 250, 250, this->ptr_imagewindow_->ptr_mainwindow_->ptr_renderingwidget_->DDG);
-	if (image_status_) pt = new Pt_ARAP(ptr_mesh_, image_mat_.cols, image_mat_.rows, this->ptr_imagewindow_->ptr_mainwindow_->ptr_renderingwidget_->DDG);
+	pt = new Pt_ARAP(ptr_mesh_, min(min(image_mat_.cols, this->width()), min(image_mat_.rows, this->height())), min(min(image_mat_.cols, this->width()), min(image_mat_.rows, this->height())), this->ptr_imagewindow_->ptr_mainwindow_->ptr_renderingwidget_->DDG);
+	if (image_status_) pt = new Pt_ARAP(ptr_mesh_, min(min(image_mat_.cols, this->width()), min(image_mat_.rows, this->height())), min(min(image_mat_.cols, this->width()), min(image_mat_.rows, this->height())), this->ptr_imagewindow_->ptr_mainwindow_->ptr_renderingwidget_->DDG);
 	pt->parameterization();
 	if (image_status_) pt->SetTexcoord();
 	update();
@@ -241,8 +241,8 @@ void ImageWidget::Pt_Arap()
 
 void ImageWidget::Pt_Slim()
 {
-	pt = new Pt_SLIM(ptr_mesh_, 250, 250, this->ptr_imagewindow_->ptr_mainwindow_->ptr_renderingwidget_->DDG);
-	if (image_status_) pt = new Pt_SLIM(ptr_mesh_, image_mat_.cols, image_mat_.rows, this->ptr_imagewindow_->ptr_mainwindow_->ptr_renderingwidget_->DDG);
+	pt = new Pt_SLIM(ptr_mesh_, min(min(image_mat_.cols, this->width()), min(image_mat_.rows, this->height())), min(min(image_mat_.cols, this->width()), min(image_mat_.rows, this->height())), this->ptr_imagewindow_->ptr_mainwindow_->ptr_renderingwidget_->DDG);
+	if (image_status_) pt = new Pt_SLIM(ptr_mesh_, min(min(image_mat_.cols, this->width()), min(image_mat_.rows, this->height())), min(min(image_mat_.cols, this->width()), min(image_mat_.rows, this->height())), this->ptr_imagewindow_->ptr_mainwindow_->ptr_renderingwidget_->DDG);
 	pt->parameterization();
 	if (image_status_) pt->SetTexcoord();
 	update();

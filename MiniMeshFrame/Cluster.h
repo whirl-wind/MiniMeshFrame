@@ -45,8 +45,10 @@ public:
 
 	int get_minIdx(int idx_f);
 	void kmeans();
+	void addClass();
 	void updateCentroids();
 	void updateTriangles();
+	void updateInfo();
 	void Set_Rigid_Transformation();
 
 	float distTriangles(Vector3f A, Matrix3f B); 

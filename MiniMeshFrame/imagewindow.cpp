@@ -8,11 +8,11 @@
 ImageWindow::ImageWindow(MainWindow *mainwindow)
 	: ptr_mainwindow_(mainwindow)
 {
+	setGeometry(mainwindow->pos().x()+ mainwindow->size().width()/4*3-8.5, mainwindow->pos().y()+128, max(mainwindow->size().width()/4,300), max(mainwindow->size().width()/4,300));
 
-	setGeometry(1100, 150, 500, 500);
-
-	imagewidget_ = new ImageWidget(this);
-	setCentralWidget(imagewidget_);
+	ptr_imagewidget_ = new ImageWidget(this);
+	setCentralWidget(ptr_imagewidget_);
+	setWindowIcon(QIcon("./Resources/images/Icon.jpg"));
 
 	CreateActions();
 	CreateMenus();
@@ -26,12 +26,12 @@ ImageWindow::ImageWindow(MainWindow *mainwindow)
 	action_pt_asap = new QAction(tr("pt_asap"), this);
 	action_pt_arap = new QAction(tr("pt_arap"), this);
 	action_pt_slim = new QAction(tr("pt_slim"), this);
-	connect(action_pt_uniform, SIGNAL(triggered()), imagewidget_, SLOT(Pt_Uniform()));
-	connect(action_pt_weightedleastsquares, SIGNAL(triggered()), imagewidget_, SLOT(Pt_Weightedleastsquares()));
-	connect(action_pt_shapepreserving, SIGNAL(triggered()), imagewidget_, SLOT(Pt_Shapepreserving()));
-	connect(action_pt_asap, SIGNAL(triggered()), imagewidget_, SLOT(Pt_Asap()));
-	connect(action_pt_arap, SIGNAL(triggered()), imagewidget_, SLOT(Pt_Arap()));
-	connect(action_pt_slim, SIGNAL(triggered()), imagewidget_, SLOT(Pt_Slim()));
+	connect(action_pt_uniform, SIGNAL(triggered()), ptr_imagewidget_, SLOT(Pt_Uniform()));
+	connect(action_pt_weightedleastsquares, SIGNAL(triggered()), ptr_imagewidget_, SLOT(Pt_Weightedleastsquares()));
+	connect(action_pt_shapepreserving, SIGNAL(triggered()), ptr_imagewidget_, SLOT(Pt_Shapepreserving()));
+	connect(action_pt_asap, SIGNAL(triggered()), ptr_imagewidget_, SLOT(Pt_Asap()));
+	connect(action_pt_arap, SIGNAL(triggered()), ptr_imagewidget_, SLOT(Pt_Arap()));
+	connect(action_pt_slim, SIGNAL(triggered()), ptr_imagewidget_, SLOT(Pt_Slim()));
 
 	this->addToolBarBreak(Qt::TopToolBarArea);
 	toolbar_parameterization_ = addToolBar(tr("toolbar_parameterization_"));
@@ -95,22 +95,22 @@ void ImageWindow::CreateActions()
 	action_open_ = new QAction(QIcon(":/MiniMeshFrame/Resources/images/open.png"), tr("&Open..."), this);
 	action_open_->setShortcuts(QKeySequence::Open);
 	action_open_->setStatusTip(tr("Open an existing file"));
-	//connect(action_open_, SIGNAL(triggered()), imagewidget_, SLOT(Open()));
+	//connect(action_open_, SIGNAL(triggered()), ptr_imagewidget_, SLOT(Open()));
 	connect(action_open_, SIGNAL(triggered()), ptr_mainwindow_->ptr_renderingwidget_, SLOT(LoadTexture()));
 	
 	action_save_ = new QAction(QIcon(":/MiniMeshFrame/Resources/images/save.png"), tr("&Save"), this);
 	action_save_->setShortcuts(QKeySequence::Save);
 	action_save_->setStatusTip(tr("Save the document to disk"));
-	connect(action_save_, SIGNAL(triggered()), imagewidget_, SLOT(Save()));
+	connect(action_save_, SIGNAL(triggered()), ptr_imagewidget_, SLOT(Save()));
 
 	action_saveas_ = new QAction(tr("Save &As..."), this);
 	//action_saveas_->setShortcuts(QKeySequence::SaveAs);
 	action_saveas_->setStatusTip(tr("Save the document under a new name"));
-	connect(action_saveas_, SIGNAL(triggered()), imagewidget_, SLOT(SaveAs()));
+	connect(action_saveas_, SIGNAL(triggered()), ptr_imagewidget_, SLOT(SaveAs()));
 
 	action_restore_ = new QAction(tr("Restore"), this);
 	action_restore_->setStatusTip(tr("Show origin image"));
-	connect(action_restore_, SIGNAL(triggered()), imagewidget_, SLOT(Restore()));
+	connect(action_restore_, SIGNAL(triggered()), ptr_imagewidget_, SLOT(Restore()));
 
 	action_exit_ = new QAction(tr("Exit"), this);
 	action_exit_->setStatusTip(tr("Exit"));

@@ -72,6 +72,7 @@ private:
 	void SetLight();
 
 public slots:
+	void ClearFaceColor();
 	void Restore();
 	void SetBackground();
 	void ReadMesh();

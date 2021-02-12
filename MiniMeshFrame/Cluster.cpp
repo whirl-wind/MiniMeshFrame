@@ -307,7 +307,7 @@ bool Cluster::addCentroids()
 			if ((*it).min_Dist > max_Dist) {
 				max_Dist = (*it).min_Dist;
 				min_index = (*it).min_Index;
-				idx = distance(clusterAssment.begin(), it);
+				idx = it_idx;
 				s = true;
 			}
 			it++;
@@ -426,32 +426,25 @@ void Cluster::updateCluster()
 		}
 		int idx_t = 0;
 		while (it_t != clusterAssment.end()) {
-			if ((*it_t).min_Dist == 0) {
-				it_t++;
-				idx_t++;
-				continue;
+			int idx_c = 0;
+			vector<Vector3f>::iterator it_c = canonical_centroids_triangles.begin();
+			while (it_c != canonical_centroids_triangles.end()) {
+				min_Dist[idx_c] = distTriangles((*it_c), canonical_triangles[idx_t]);
+				it_c++;
+				idx_c++;
 			}
-			else {
-				int idx_c = 0;
-				vector<Vector3f>::iterator it_c = canonical_centroids_triangles.begin();
-				while (it_c != canonical_centroids_triangles.end()) {
-					min_Dist[idx_c] = distTriangles((*it_c), canonical_triangles[idx_t]);
-					it_c++;
-					idx_c++;
-				}
 
-				float min_d = INT_MAX;
-				int min_idx = 0;
-				for (int i = 0; i < centroids_num; i++) {
-					if (min_Dist[i] < min_d) {
-						min_d = min_Dist[i];
-						min_idx = i;
-					}
+			float min_d = INT_MAX;
+			int min_idx = 0;
+			for (int i = 0; i < centroids_num; i++) {
+				if (min_Dist[i] < min_d) {
+					min_d = min_Dist[i];
+					min_idx = i;
 				}
-
-				(*it_t).min_Dist = min_d;
-				(*it_t).min_Index = min_idx;
 			}
+
+			(*it_t).min_Dist = min_d;
+			(*it_t).min_Index = min_idx;
 			it_t++;
 			idx_t++;
 		}
@@ -596,6 +589,13 @@ void Cluster::updateTriangles()
 	}
 }
 
+void Cluster::updateInfo()
+{
+	if (nonlinear_type_ == kDefault || nonlinear_type_ == kT) Set_Canonical_Triangle();
+	Set_Rigid_Transformation();
+	Set_Faces_Colors();
+}
+
 struct xtradata {
 	int min_idx;
 	Cluster *c;
@@ -634,6 +634,8 @@ void Cluster::LM_NonLinearSearch()
 	float *p = new float[m];
 	float *x = new float[n];
 	float opts[LM_OPTS_SZ], info[LM_INFO_SZ];
+	opts[0] = LM_INIT_MU; opts[1] = 1E-9; opts[2] = 1E-9; opts[3] = 1E-15;
+	opts[4] = LM_DIFF_DELTA; // relevant only if the finite difference Jacobian version isused
 	struct xtradata data;
 	data.c = this;
 	for (int k = 0; k < centroids_num; k++) {
@@ -644,8 +646,9 @@ void Cluster::LM_NonLinearSearch()
 		p[2] = canonical_centroids_triangles[k](2);
 		//模拟n次测量的结果，由于是最小值，设为零
 		for (int i = 0; i < n; i++) x[i] = 0.0;
-		opts[0] = LM_INIT_MU;
 		// 调用迭代入口函数
+
+		//std::cout << std::endl;
 		int ret = slevmar_dif(
 			cluster_distance,      //描述测量值之间关系的函数指针
 			p,          //初始化的待求参数，结果一并保存在其中
@@ -653,7 +656,7 @@ void Cluster::LM_NonLinearSearch()
 			m,          //参数维度
 			n,          //测量值维度
 			1000,       //最大迭代次数
-			opts,       //迭代的一些参数
+			NULL,       //迭代的一些参数
 			info,       //关于最小化结果的一些参数，不需要设为NULL
 			NULL, NULL,//一些内存的指针，暂时不需要，以后再学习这个具体由什么用
 			(void *)&data
@@ -694,9 +697,20 @@ void Cluster::kmeans()
 		updateCentroids();
 	}
 
-	if (nonlinear_type_ == kDefault || nonlinear_type_ == kT) Set_Canonical_Triangle();
-	Set_Rigid_Transformation();
-	Set_Faces_Colors();
+	updateInfo();
+}
+
+void Cluster::addClass()
+{
+	class_num++;
+	//std::cout << "log " << __LINE__ << std::endl;
+	addCentroids();
+	//std::cout << "log " << __LINE__ << std::endl;
+	updateCluster();
+	//std::cout << "log " << __LINE__ << std::endl;
+	updateCentroids();
+	//std::cout << "log " << __LINE__ << std::endl;
+	//std::cout << class_num << std::endl;
 }
 
 
@@ -849,14 +863,14 @@ void Cluster::show_info()
 {
 	if ((nonlinear_type_ == kDefault || nonlinear_type_ == kT) && !centroids_index.empty()) {
 		for (int i = 0; i < class_num; i++) {
-			std::cout << centroids_index[i] << " :  " << canonical_triangles[centroids_index[i]].transpose() << std::endl;
-			std::cout << "ClassNum: " << clusterNumber[i] << std::endl;
+			std::cout <<"    "<< centroids_index[i] << " :  " << canonical_triangles[centroids_index[i]].transpose() << std::endl;
+			std::cout << "    ClassNum: " << clusterNumber[i] << std::endl;
 		}
 	}
 	else if (nonlinear_type_ == kLM) {
 		for (int i = 0; i < class_num; i++) {
-			std::cout << i + 1 << " :  " << canonical_centroids_triangles[i].transpose() << std::endl;
-			std::cout << "ClassNum: " << clusterNumber[i] << std::endl;
+			std::cout << "    " << i + 1 << " :  " << canonical_centroids_triangles[i].transpose() << std::endl;
+			std::cout << "    ClassNum: " << clusterNumber[i] << std::endl;
 		}
 	}
 

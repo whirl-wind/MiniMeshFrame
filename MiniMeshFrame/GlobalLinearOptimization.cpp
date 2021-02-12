@@ -52,11 +52,12 @@ GlobalLinearOptimization::GlobalLinearOptimization()
 
 }
 
-GlobalLinearOptimization::GlobalLinearOptimization(Cluster * c)
+GlobalLinearOptimization::GlobalLinearOptimization(Cluster * c, float opt_err)
 {
 	NonLinear = false;
 
 	mesh_cluster = c;
+	t_err = opt_err;
 	ptr_mesh_ = mesh_cluster->ptr_object_;
 	ptr_mesh_base_ = new MyMesh();
 	ptr_mesh_base_->assign(*ptr_mesh_, true);
@@ -72,6 +73,8 @@ void GlobalLinearOptimization::Run()
 	std::cout << "Modifying... " << std::endl;
 	int MAX_C = 2000;
 	float error = 0.075;
+
+	Opt_Cluster();
 
 	vector<float> lo_mem;
 	float lo = INT_MAX;
@@ -99,19 +102,33 @@ void GlobalLinearOptimization::Run()
 	loss = lo;
 
 	mesh_cluster->updateTriangles();
-	mesh_cluster->kmeans();
+	mesh_cluster->updateCentroids();
+	mesh_cluster->updateInfo();
 
 	std::cout << "------------------------------------------------- " << std::endl;
+	mesh_cluster->show_info();
 	std::cout << "Cluster Num: " << mesh_cluster->class_num << std::endl;
 	std::cout << "Total Loss: " << loss << std::endl;
-	mesh_cluster->show_info();
 	std::cout << "------------------------------------------------- \n" << std::endl;
+}
+
+void GlobalLinearOptimization::Opt_Cluster()
+{
+	loss = get_loss();
+	while ( loss > t_err) {
+		std::cout << mesh_cluster->class_num <<") loss: "<< loss << std::endl;
+		mesh_cluster->addClass();
+		mesh_cluster->updateInfo();
+		loss = get_loss();
+	}
+	std::cout<< mesh_cluster->class_num << ") loss: " << loss << std::endl;
+	std::cout << "Cluster_OPT Finished!\n" << std::endl;
 }
 
 float GlobalLinearOptimization::One_Step()
 {
-	//mesh_cluster->kmeans();
-	mesh_cluster->updateCentroids();
+	mesh_cluster->kmeans();
+	//mesh_cluster->updateCentroids();
 	//mesh_cluster->show_info();
 	std::cout << "Loss_cl: " << get_loss() << std::endl;
 	if (NonLinear) {
@@ -120,12 +137,12 @@ float GlobalLinearOptimization::One_Step()
 	else {
 		loss = LinearOptimization();
 	}
-	loss = get_loss();
+	//loss = get_loss();
 	std::cout << "Loss_op: " << loss << std::endl;
 	Set_Vertices();
 	mesh_cluster->updateTriangles();
-	loss = get_loss();
-	std::cout << "Loss_sv: " << loss << std::endl;
+	//loss = get_loss();
+	//std::cout << "Loss_sv: " << loss << std::endl;
 	return loss;
 }
 
@@ -506,7 +523,9 @@ float GlobalLinearOptimization::LM_NonLinearSearch()
 	float *p = new float[m];
 	float *x = new float[n];
 	float opts[LM_OPTS_SZ], info[LM_INFO_SZ];
-	opts[0] = LM_INIT_MU;
+	opts[0] = LM_INIT_MU; opts[1] = 1E-9; opts[2] = 1E-9; opts[3] = 1E-15;
+	opts[4] = LM_DIFF_DELTA; // relevant only if the finite difference Jacobian version isused
+
 	struct glodata data;
 	data.g = this;
 	//待求参数的初值

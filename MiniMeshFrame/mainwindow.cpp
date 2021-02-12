@@ -21,6 +21,7 @@ MainWindow::MainWindow(QWidget *parent)
 	//	setCentralWidget(renderingwidget_);
 	ptr_imagewindow_ = nullptr;
 	setGeometry(300, 150, 800, 600);
+	setWindowIcon(QIcon("./Resources/images/Icon.jpg"));
 
 	CreateActions();
 	CreateMenus();
@@ -113,11 +114,13 @@ void MainWindow::CreateActions()
 	action_loadtexture_ = new QAction(tr("LoadTexture"), this);
 	action_background_ = new QAction(tr("ChangeBackground"), this);
 	action_restore_ = new QAction(tr("Restore"), this);
+	action_clearfcolor_ = new QAction(tr("ClearFC"), this);
 
 	connect(action_loadmesh_, SIGNAL(triggered()), ptr_renderingwidget_, SLOT(ReadMesh()));
 	connect(action_loadtexture_, SIGNAL(triggered()), ptr_renderingwidget_, SLOT(LoadTexture()));
 	connect(action_background_, SIGNAL(triggered()), ptr_renderingwidget_, SLOT(SetBackground()));
 	connect(action_restore_, SIGNAL(triggered()), ptr_renderingwidget_, SLOT(Restore()));
+	connect(action_clearfcolor_, SIGNAL(triggered()), ptr_renderingwidget_, SLOT(ClearFaceColor()));
 
 	action_pt_window = new QAction(tr("pt_window"), this);
 	connect(action_pt_window, &QAction::triggered, this, &MainWindow::ImageWidget_Show);
@@ -162,6 +165,7 @@ void MainWindow::CreateToolBars()
 	toolbar_basic_->addAction(action_loadtexture_);
 	toolbar_basic_->addAction(action_background_);
 	toolbar_basic_->addAction(action_restore_);
+	toolbar_basic_->addAction(action_clearfcolor_);
 
 	toolbar_parameterization_ = addToolBar(tr("toolbar_parameterization_"));
 	toolbar_parameterization_->addAction(action_pt_window);
@@ -285,7 +289,10 @@ void MainWindow::ImageWidget_Show()
 	if (ptr_renderingwidget_->ptr_mesh_->n_vertices() < 3) return;
 	if (!ptr_renderingwidget_->is_load_texture_) return;
 	if (!ptr_imagewindow_) ptr_imagewindow_ = new ImageWindow(this);
-	else ptr_imagewindow_->imagewidget_->Open(ptr_renderingwidget_->texture_img_);
+	else {
+		ptr_imagewindow_->setGeometry(this->pos().x() + this->size().width() / 4 * 3 - 8.5, this->pos().y() + 128, max(this->size().width() / 4, 300), max(this->size().width() / 4, 300));
+		ptr_imagewindow_->ptr_imagewidget_->Open(ptr_renderingwidget_->texture_img_);
+	}
 	ptr_imagewindow_->show();
 }
 

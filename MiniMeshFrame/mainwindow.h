@@ -65,6 +65,7 @@ private:
 	QAction							*action_loadtexture_;
 	QAction							*action_background_;
 	QAction							*action_restore_;
+	QAction*						action_clearfcolor_;
 
 	// Render RadioButtons
 	QCheckBox						*checkbox_point_;

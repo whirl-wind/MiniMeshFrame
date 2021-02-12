@@ -42,10 +42,11 @@ private:
 	bool NonLinear;
 public:
 	GlobalLinearOptimization();
-	GlobalLinearOptimization(Cluster *c);
+	GlobalLinearOptimization(Cluster *c,float opt_err);
 	~GlobalLinearOptimization();
 
 	void Run();
+	void Opt_Cluster();
 	float One_Step();
 	float get_loss();
 
@@ -57,6 +58,7 @@ public:
 
 	vector<Vector3f> new_vectors;
 	float loss;
+	float t_err;
 };
 
 #endif

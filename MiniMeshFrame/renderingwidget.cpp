@@ -400,6 +400,15 @@ void RenderingWidget::SetLight()
 	glEnable(GL_COLOR_MATERIAL);
 }
 
+void RenderingWidget::ClearFaceColor()
+{
+	for (MyMesh::FaceIter f_it = ptr_mesh_->faces_begin(); f_it != ptr_mesh_->faces_end(); ++f_it) {
+		ptr_mesh_->set_color(f_it.handle(), OpenMesh::Vec3uc(225,225,225));
+	}
+	updateGL();
+}
+
+
 void RenderingWidget::Restore()
 {
 	ptr_mesh_->assign(*ptr_origin_mesh_);
@@ -409,6 +418,8 @@ void RenderingWidget::Restore()
 	ptr_mesh_->request_halfedge_status();
 	ptr_mesh_->request_face_status();
 
+
+	ClearFaceColor();
 	if(need_to_update_DDG) UpdateDDG();
 	select_ix = nullptr;
 	IXs.clear();
@@ -460,12 +471,12 @@ void RenderingWidget::ReadMesh()
 	ptr_mesh_->request_edge_status();
 	ptr_mesh_->request_halfedge_status();
 	ptr_mesh_->request_face_status();
-
 	ptr_mesh_->request_face_colors();
 
 	ptr_origin_mesh_->assign(*ptr_mesh_);
 	UpdateDDG();
 	BackUp();
+	ClearFaceColor();
 
 	select_ix = nullptr;
 	IXs.clear();
@@ -535,6 +546,7 @@ void RenderingWidget::MorphingTo()
 		float time = 1 / float(frame - i);
 		//float time = i * dt;
 		mp.morphing(time, i);
+		UpdateDDG();
 		updateGL();
 	}
 	UpdateDDG();
@@ -805,10 +817,15 @@ void RenderingWidget::Simplification_QEM()
 	if (need_to_update_DDG) UpdateDDG();
 
 	Sp_QEM* simplification = new Sp_QEM(ptr_mesh_, ptr_mesh_->n_vertices()/2, 10.0);
-	
+	int ccc = ptr_mesh_->n_faces();
 	while (simplification->Qualified())
 	{
 		simplification->simplify_one_step();
+		//ccc = 0;
+		//for (MyMesh::FaceIter f_it = ptr_mesh_->faces_begin(); f_it != ptr_mesh_->faces_end(); ++f_it) {
+		//	if (ptr_mesh_->status(*f_it).deleted()) continue;
+		//	ccc++;
+		//}
 		updateGL();
 	}
 
@@ -1078,16 +1095,32 @@ void RenderingWidget::ModifyMesh()
 	if (cluster->triangles.size() == 0) return;
 
 	is_draw_cluster_ = true;
-	glo = new GlobalLinearOptimization(cluster);
 
+	float opt_err = 10.0;
+	std::cout << "Please input the tolerance error: " << std::endl;
+	std::cin >> opt_err;
+
+	glo = new GlobalLinearOptimization(cluster,opt_err);
+	
 	///////////////
 	std::cout << "Modifying... " << std::endl;
 	int MAX_C = 2000;
 	int MIN_C = 100;
 	float error = 0.075;
 
+	float lo = glo->get_loss();
+	while (lo > glo->t_err) {
+		std::cout << glo->get_cluster()->class_num << ") loss: " << lo << std::endl;
+		glo->get_cluster()->addClass();
+		glo->get_cluster()->updateInfo();
+		lo = glo->get_loss();
+		updateGL();
+	}
+	std::cout << glo->get_cluster()->class_num << ") loss: " << lo << std::endl;
+	std::cout << "Cluster_OPT Finished!\n" << std::endl;
+
 	vector<float> lo_mem;
-	float lo = INT_MAX;
+	lo = INT_MAX;
 	int count = 0;
 	lo_mem.clear();
 	while (lo > error && count < MAX_C) {
@@ -1112,20 +1145,20 @@ void RenderingWidget::ModifyMesh()
 	}
 
 	glo->loss = lo;
-
-	glo->get_cluster()->updateTriangles();
-	glo->get_cluster()->kmeans();
 	////////////////
 
 	cluster = glo->get_cluster();
-	cluster->Set_Faces_Colors();
+	cluster->updateTriangles();
+	cluster->updateCentroids();
+	cluster->updateInfo();
 
 	std::cout << "------------------------------------------------- " << std::endl;
+	glo->get_cluster()->show_info();
 	std::cout << "Cluster Num: " << glo->get_cluster()->class_num << std::endl;
 	std::cout << "Total Loss: " << glo->loss << std::endl;
-	glo->get_cluster()->show_info();
 	std::cout << "------------------------------------------------- \n" << std::endl;
 
+	UpdateDDG();
 	updateGL();
 }
 

@@ -24,7 +24,7 @@ public:
 	~ImageWindow();
 
 	MainWindow	*ptr_mainwindow_;
-	ImageWidget	*imagewidget_;
+	ImageWidget	*ptr_imagewidget_;
 
 protected:
 	void closeEvent(QCloseEvent *e);
